@@ -1,0 +1,321 @@
+USE classicmodels;
+SELECT
+buyPrice,
+quantityInStock,
+productName
+FROM
+products
+ORDER BY
+buyPrice DESC
+LIMIT 1;
+SELECT
+customerName,
+addressLine1,
+creditLimit
+FROM
+customers
+WHERE
+(addressLine1 LIKE '%Lane%' OR addressLine1 LIKE '%Ln.%')
+AND creditLimit > 80000;
+SELECT
+p.productName,
+p.productCode,
+COUNT(od.orderNumber) AS orders_count
+FROM
+products p
+JOIN
+orderdetails od ON p.productCode = od.productCode
+GROUP BY
+p.productCode, p.productName
+HAVING
+orders_count > 50
+ORDER BY
+orders_count DESC;
+SELECT
+c.customerName,
+c.customerNumber,
+p.amount
+FROM
+customers c
+JOIN
+payments p ON c.customerNumber = p.customerNumber
+WHERE
+YEAR(p.paymentDate) = 2005
+AND p.amount > 100000;
+SELECT
+c.customerName,
+p.paymentDate
+FROM
+customers c
+JOIN
+payments p ON c.customerNumber = p.customerNumber
+JOIN
+employees e ON c.salesRepEmployeeNumber = e.employeeNumber
+JOIN
+offices o ON e.officeCode = o.officeCode
+WHERE
+o.city = 'San Francisco'
+ORDER BY
+p.paymentDate;
+SELECT 
+c.customerName, 
+c.customerNumber
+FROM 
+customers c
+JOIN 
+payments p ON c.customerNumber = p.customerNumber
+WHERE 
+p.paymentDate = '2004-11-15' 
+OR p.paymentDate = '2004-11-17';
+SELECT * FROM products
+WHERE productLine LIKE '%Vintage%' 
+AND productDescription LIKE '%tires%';
+SELECT 
+o.city AS department, 
+e.firstName, 
+e.lastName
+FROM 
+employees e
+JOIN 
+offices o ON e.officeCode = o.officeCode
+LEFT JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+WHERE 
+c.customerNumber IS NULL 
+AND o.country = 'Japan';
+SELECT DISTINCT 
+e.*
+FROM 
+employees e
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+LEFT JOIN 
+payments p ON c.customerNumber = p.customerNumber
+WHERE 
+e.officeCode = '6' 
+AND p.checkNumber IS NULL;
+SELECT 
+o.city AS department, 
+COUNT(e.employeeNumber) AS employee_count
+FROM 
+offices o
+JOIN 
+employees e ON o.officeCode = e.officeCode
+GROUP BY 
+o.officeCode, o.city
+ORDER BY 
+employee_count DESC;
+SELECT 
+MONTHNAME(orderDate) AS month_name, 
+COUNT(orderNumber) AS total_orders
+FROM 
+orders
+GROUP BY 
+MONTH(orderDate), MONTHNAME(orderDate)
+ORDER BY 
+MONTH(orderDate);
+SELECT DISTINCT 
+e.employeeNumber, 
+e.firstName, 
+e.lastName
+FROM 
+employees e
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+JOIN 
+payments p ON c.customerNumber = p.customerNumber
+WHERE 
+p.amount > 100000
+ORDER BY 
+e.employeeNumber;
+SELECT 
+e.employeeNumber, 
+e.firstName, 
+e.lastName, e.jobTitle
+FROM 
+employees e
+JOIN 
+offices o ON e.officeCode = o.officeCode
+LEFT JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+WHERE 
+o.country = 'USA' 
+AND c.customerNumber IS NULL;
+SELECT 
+orderNumber, 
+customerNumber, 
+orderDate,
+TIMESTAMPDIFF(YEAR, orderDate, NOW()) AS antiquity
+FROM 
+orders
+ORDER BY 
+orderDate ASC
+LIMIT 1;
+SELECT 
+COUNT(*) AS total_payments, 
+MIN(amount) AS min_amount, 
+MAX(amount) AS max_amount
+FROM 
+payments;
+SELECT 
+e.employeeNumber, 
+e.firstName, 
+COUNT(DISTINCT c.customerNumber) AS customer_count
+FROM 
+employees e
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+JOIN 
+payments p ON c.customerNumber = p.customerNumber
+WHERE 
+p.amount < 3000
+GROUP BY 
+e.employeeNumber, e.firstName;
+SELECT 
+p.checkNumber, 
+p.amount,
+CASE 
+WHEN p.amount > 50000 THEN 'Very high payment'
+WHEN p.amount >= 15000 AND p.amount <= 50000 THEN 'Medium payment'
+ELSE 'Low payment'
+END AS payment_classification
+FROM 
+payments p
+JOIN 
+customers c ON p.customerNumber = c.customerNumber
+JOIN 
+employees e ON c.salesRepEmployeeNumber = e.employeeNumber
+JOIN 
+offices o ON e.officeCode = o.officeCode
+WHERE 
+o.city = 'NYC';
+SELECT 
+o.city AS branch_name, 
+e.firstName, 
+e.lastName
+FROM 
+employees e
+JOIN 
+offices o ON e.officeCode = o.officeCode
+ORDER BY 
+o.city, e.lastName;
+SELECT DISTINCT 
+o.city AS office_name
+FROM 
+offices o
+JOIN 
+employees e ON o.officeCode = e.officeCode
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+JOIN 
+orders ord ON c.customerNumber = ord.customerNumber
+WHERE 
+c.customerName = 'Atelier graphique';
+SELECT 
+e.firstName, 
+e.lastName, 
+e.jobTitle, 
+CONCAT(b.firstName, ' ', b.lastName) AS boss_name
+FROM 
+employees e
+LEFT JOIN 
+employees b ON e.reportsTo = b.employeeNumber
+WHERE 
+e.jobTitle <> 'Sales Rep';
+SELECT 
+o.city AS office_name, 
+SUM(od.quantityOrdered * od.priceEach) AS total_amount
+FROM 
+offices o
+JOIN 
+employees e ON o.officeCode = e.officeCode
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+JOIN 
+orders ord ON c.customerNumber = ord.customerNumber
+JOIN 
+orderdetails od ON ord.orderNumber = od.orderNumber
+GROUP BY 
+o.officeCode, o.city;
+SELECT DISTINCT 
+c.customerName, 
+e.firstName, 
+e.lastName
+FROM
+customers c
+JOIN 
+employees e ON c.salesRepEmployeeNumber = e.employeeNumber
+JOIN 
+orders ord ON c.customerNumber = ord.customerNumber
+JOIN 
+orderdetails od ON ord.orderNumber = od.orderNumber
+JOIN 
+products p ON od.productCode = p.productCode
+WHERE 
+c.country = 'Japan' 
+AND p.productLine = 'Classic Cars';
+SELECT DISTINCT 
+o.city AS office_city
+FROM 
+offices o
+JOIN 
+employees e ON o.officeCode = e.officeCode
+WHERE 
+e.employeeNumber IN (
+SELECT salesRepEmployeeNumber
+FROM customers
+GROUP BY salesRepEmployeeNumber
+HAVING COUNT(customerNumber) >= 5
+);
+SELECT 
+ord.orderNumber, 
+ord.orderDate
+FROM 
+orders ord
+JOIN 
+orderdetails od ON ord.orderNumber = od.orderNumber
+JOIN 
+products p ON od.productCode = p.productCode
+WHERE 
+p.productLine = 'Planes'
+AND YEAR(ord.orderDate) = 2024 AND MONTH(ord.orderDate) = 5
+AND ord.customerNumber IN (
+SELECT customerNumber
+FROM orders
+GROUP BY customerNumber
+HAVING COUNT(orderNumber) = 2
+);
+SELECT 
+ord.orderNumber, 
+ord.orderDate
+FROM 
+orders ord
+JOIN 
+orderdetails od ON ord.orderNumber = od.orderNumber
+JOIN 
+products p ON od.productCode = p.productCode
+WHERE 
+p.productLine = 'Planes'
+AND YEAR(ord.orderDate) = 2004 AND MONTH(ord.orderDate) = 5
+AND ord.customerNumber IN (
+SELECT customerNumber
+FROM orders
+GROUP BY customerNumber
+HAVING COUNT(orderNumber) = 2
+);
+SELECT 
+o.city AS office_city, 
+ord.status AS order_status, 
+COUNT(DISTINCT c.customerNumber) AS customer_count
+FROM 
+offices o
+JOIN 
+employees e ON o.officeCode = e.officeCode
+JOIN 
+customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+JOIN 
+orders ord ON c.customerNumber = ord.customerNumber
+GROUP BY 
+o.city, ord.status
+ORDER BY 
+o.city, ord.status;
