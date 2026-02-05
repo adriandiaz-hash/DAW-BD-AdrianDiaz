@@ -1,4 +1,5 @@
 USE classicmodels;
+/* 1. Highest purchase price product */
 SELECT
 buyPrice,
 quantityInStock,
@@ -8,6 +9,7 @@ products
 ORDER BY
 buyPrice DESC
 LIMIT 1;
+/* 2. Customers on 'Lane' with credit > 80k */
 SELECT
 customerName,
 addressLine1,
@@ -17,6 +19,7 @@ customers
 WHERE
 (addressLine1 LIKE '%Lane%' OR addressLine1 LIKE '%Ln.%')
 AND creditLimit > 80000;
+/* 3. Products in >50 orders (descending) */
 SELECT
 p.productName,
 p.productCode,
@@ -31,6 +34,7 @@ HAVING
 orders_count > 50
 ORDER BY
 orders_count DESC;
+/* 4. Payments > 100k in 2005 */
 SELECT
 c.customerName,
 c.customerNumber,
@@ -42,6 +46,7 @@ payments p ON c.customerNumber = p.customerNumber
 WHERE
 YEAR(p.paymentDate) = 2005
 AND p.amount > 100000;
+/* 5. Payments managed by San Francisco office (sorted by date) */
 SELECT
 c.customerName,
 p.paymentDate
@@ -57,6 +62,7 @@ WHERE
 o.city = 'San Francisco'
 ORDER BY
 p.paymentDate;
+/* 6. Payments on specific dates (Nov 15 or 17, 2004) */
 SELECT 
 c.customerName, 
 c.customerNumber
@@ -67,9 +73,11 @@ payments p ON c.customerNumber = p.customerNumber
 WHERE 
 p.paymentDate = '2004-11-15' 
 OR p.paymentDate = '2004-11-17';
+/* 7. 'Vintage' products containing 'tires' description */
 SELECT * FROM products
 WHERE productLine LIKE '%Vintage%' 
 AND productDescription LIKE '%tires%';
+/* 8. Japan employees with no assigned customers */
 SELECT 
 o.city AS department, 
 e.firstName, 
@@ -83,6 +91,8 @@ customers c ON e.employeeNumber = c.salesRepEmployeeNumber
 WHERE 
 c.customerNumber IS NULL 
 AND o.country = 'Japan';
+/* 9. Office 6 employees with non-paying customers */
+/* Note: Returns empty if all customers have paid */
 SELECT DISTINCT 
 e.*
 FROM 
@@ -94,6 +104,7 @@ payments p ON c.customerNumber = p.customerNumber
 WHERE 
 e.officeCode = '6' 
 AND p.checkNumber IS NULL;
+/* 10. Employee count per office (descending) */
 SELECT 
 o.city AS department, 
 COUNT(e.employeeNumber) AS employee_count
@@ -105,6 +116,7 @@ GROUP BY
 o.officeCode, o.city
 ORDER BY 
 employee_count DESC;
+/* 11. Monthly order volume (Jan to Dec) */
 SELECT 
 MONTHNAME(orderDate) AS month_name, 
 COUNT(orderNumber) AS total_orders
@@ -114,6 +126,7 @@ GROUP BY
 MONTH(orderDate), MONTHNAME(orderDate)
 ORDER BY 
 MONTH(orderDate);
+/* 12. Employees managing high payments (>100k) */
 SELECT DISTINCT 
 e.employeeNumber, 
 e.firstName, 
@@ -128,6 +141,7 @@ WHERE
 p.amount > 100000
 ORDER BY 
 e.employeeNumber;
+/* 13. USA employees with no assigned customers */
 SELECT 
 e.employeeNumber, 
 e.firstName, 
@@ -141,6 +155,7 @@ customers c ON e.employeeNumber = c.salesRepEmployeeNumber
 WHERE 
 o.country = 'USA' 
 AND c.customerNumber IS NULL;
+/* 14. Antiquity of the oldest order (Years passed) */
 SELECT 
 orderNumber, 
 customerNumber, 
@@ -151,12 +166,14 @@ orders
 ORDER BY 
 orderDate ASC
 LIMIT 1;
+/* 15. Payment statistics (Total, Min, Max) */
 SELECT 
 COUNT(*) AS total_payments, 
 MIN(amount) AS min_amount, 
 MAX(amount) AS max_amount
 FROM 
 payments;
+/* 16. Employees with customers making small payments (<3k) */
 SELECT 
 e.employeeNumber, 
 e.firstName, 
@@ -171,6 +188,7 @@ WHERE
 p.amount < 3000
 GROUP BY 
 e.employeeNumber, e.firstName;
+/* 17. NYC payments classification (High/Medium/Low) */
 SELECT 
 p.checkNumber, 
 p.amount,
@@ -189,6 +207,7 @@ JOIN
 offices o ON e.officeCode = o.officeCode
 WHERE 
 o.city = 'NYC';
+/* 18. Employee directory sorted by branch and name */
 SELECT 
 o.city AS branch_name, 
 e.firstName, 
@@ -199,6 +218,7 @@ JOIN
 offices o ON e.officeCode = o.officeCode
 ORDER BY 
 o.city, e.lastName;
+/* 19. Office managing 'Atelier graphique' orders */
 SELECT DISTINCT 
 o.city AS office_name
 FROM 
@@ -211,6 +231,7 @@ JOIN
 orders ord ON c.customerNumber = ord.customerNumber
 WHERE 
 c.customerName = 'Atelier graphique';
+/* 20. Non-Sales Rep employees and their boss */
 SELECT 
 e.firstName, 
 e.lastName, 
@@ -222,6 +243,7 @@ LEFT JOIN
 employees b ON e.reportsTo = b.employeeNumber
 WHERE 
 e.jobTitle <> 'Sales Rep';
+/* 21. Total revenue per office */
 SELECT 
 o.city AS office_name, 
 SUM(od.quantityOrdered * od.priceEach) AS total_amount
@@ -237,11 +259,12 @@ JOIN
 orderdetails od ON ord.orderNumber = od.orderNumber
 GROUP BY 
 o.officeCode, o.city;
+/* 22. Japanese customers buying Classic Cars */
 SELECT DISTINCT 
 c.customerName, 
-e.firstName, 
+e.firstName,
 e.lastName
-FROM
+FROM 
 customers c
 JOIN 
 employees e ON c.salesRepEmployeeNumber = e.employeeNumber
@@ -254,6 +277,7 @@ products p ON od.productCode = p.productCode
 WHERE 
 c.country = 'Japan' 
 AND p.productLine = 'Classic Cars';
+/* 23. Office cities with high-load employees (>=5 customers) */
 SELECT DISTINCT 
 o.city AS office_city
 FROM 
@@ -267,6 +291,7 @@ FROM customers
 GROUP BY salesRepEmployeeNumber
 HAVING COUNT(customerNumber) >= 5
 );
+/* 24 (A). Strict Interpretation: Orders in May 2024 (Returns empty) */
 SELECT 
 ord.orderNumber, 
 ord.orderDate
@@ -285,6 +310,7 @@ FROM orders
 GROUP BY customerNumber
 HAVING COUNT(orderNumber) = 2
 );
+/* 24 (B). Logical Interpretation: Orders in May 2004 (Typo correction) */
 SELECT 
 ord.orderNumber, 
 ord.orderDate
@@ -303,6 +329,7 @@ FROM orders
 GROUP BY customerNumber
 HAVING COUNT(orderNumber) = 2
 );
+/* 25. Customer count by city and order status */
 SELECT 
 o.city AS office_city, 
 ord.status AS order_status, 
