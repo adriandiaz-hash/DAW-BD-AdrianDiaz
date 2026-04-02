@@ -1,0 +1,26 @@
+USE classicmodels;
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_sales_manager
+BEFORE INSERT ON employees
+FOR EACH ROW
+BEGIN
+    DECLARE manager_count INT;
+    IF NEW.jobTitle = 'Sales Manager' THEN
+        SELECT COUNT(*) INTO manager_count
+        FROM employees
+        WHERE officeCode = NEW.officeCode AND jobTitle = 'Sales Manager';
+        IF manager_count > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Only one Sales Manager is allowed per office';
+        END IF;
+        
+    END IF;
+END //
+
+DELIMITER ;
+INSERT INTO employees (employeeNumber, lastName, firstName, extension, email, officeCode, reportsTo, jobTitle)
+VALUES (9001, 'Mercer', 'Gabriel', 'x9001', 'gmercer@classicmodelcars.com', '1', 1002, 'Sales Manager');
+INSERT INTO employees (employeeNumber, lastName, firstName, extension, email, officeCode, reportsTo, jobTitle)
+VALUES (9002, 'Díaz', 'Adrián', 'x9002', 'adiaz@classicmodelcars.com', '1', 1002, 'Sales Manager');
