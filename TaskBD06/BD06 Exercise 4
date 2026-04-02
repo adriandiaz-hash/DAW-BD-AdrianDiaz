@@ -1,0 +1,47 @@
+USE classicmodels;
+
+DELIMITER //
+
+CREATE PROCEDURE delete_employee(IN p_employeeNumber INT)
+BEGIN
+    DECLARE v_exists INT DEFAULT 0;
+    DECLARE v_supervisor INT;
+    DECLARE v_emp_name VARCHAR(100);
+    DECLARE v_sup_name VARCHAR(100);
+    SELECT COUNT(*) INTO v_exists
+    FROM employees
+    WHERE employeeNumber = p_employeeNumber;
+
+    IF v_exists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: The employeeNumber does not exist.';
+    ELSE
+        SELECT reportsTo, CONCAT(firstName, ' ', lastName)
+        INTO v_supervisor, v_emp_name
+        FROM employees
+        WHERE employeeNumber = p_employeeNumber;
+        IF v_supervisor IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'The employee is the President and cannot be deleted';
+        ELSE
+            SELECT CONCAT(firstName, ' ', lastName) INTO v_sup_name
+            FROM employees
+            WHERE employeeNumber = v_supervisor;
+            UPDATE customers
+            SET salesRepEmployeeNumber = v_supervisor
+            WHERE salesRepEmployeeNumber = p_employeeNumber;
+            UPDATE employees
+            SET reportsTo = v_supervisor
+            WHERE reportsTo = p_employeeNumber;
+            DELETE FROM employees
+            WHERE employeeNumber = p_employeeNumber;
+            SELECT CONCAT('Customers managed by ', v_emp_name, ' (', p_employeeNumber, ') are now managed by ', v_sup_name, ' (', v_supervisor, '). Employees supervised by ', v_emp_name, ' (', p_employeeNumber, ') are now supervised by ', v_sup_name, ' (', v_supervisor, '). -> ', v_emp_name, ' (', p_employeeNumber, ') deleted successfully!') AS result_text;
+
+        END IF;
+    END IF;
+END //
+
+DELIMITER ;
+CALL delete_employee(9999);
+CALL delete_employee(1002);
+CALL delete_employee(1165);

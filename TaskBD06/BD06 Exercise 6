@@ -1,0 +1,31 @@
+USE classicmodels;
+
+DELIMITER //
+
+CREATE FUNCTION customer_summary(p_customerNumber INT) 
+RETURNS VARCHAR(100)
+READS SQL DATA
+BEGIN
+    DECLARE v_order_count INT DEFAULT 0;
+    DECLARE v_product_count INT DEFAULT 0;
+    DECLARE v_result VARCHAR(100);
+    SELECT COUNT(DISTINCT o.orderNumber), COUNT(od.productCode)
+    INTO v_order_count, v_product_count
+    FROM orders o
+    JOIN orderdetails od ON o.orderNumber = od.orderNumber
+    WHERE o.customerNumber = p_customerNumber;
+    IF v_order_count = 0 THEN
+        SET v_result = 'No orders or products';
+    ELSE
+        SET v_result = CONCAT(v_order_count, ' order/s and ', v_product_count, ' product/s');
+    END IF;
+
+    RETURN v_result;
+END //
+
+DELIMITER ;
+SELECT customer_summary(103);
+SELECT customer_summary(9999);
+SELECT customerNumber, customerName, customer_summary(customerNumber) AS summary
+FROM customers
+ORDER BY customerNumber;

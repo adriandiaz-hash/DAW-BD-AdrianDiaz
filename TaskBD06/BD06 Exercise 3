@@ -1,0 +1,26 @@
+USE classicmodels;
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_orderdetails_stock
+BEFORE INSERT ON orderdetails
+FOR EACH ROW
+BEGIN
+    DECLARE current_stock INT;
+    SELECT quantityInStock INTO current_stock
+    FROM products
+    WHERE productCode = NEW.productCode;
+    IF current_stock <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'ERROR: The product must be in stock to place an order';
+    ELSEIF NEW.quantityOrdered > current_stock THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'ERROR: Insufficient stock to fulfill the order';
+    END IF;
+END //
+
+DELIMITER ;
+INSERT INTO orderdetails(orderNumber, productCode, quantityOrdered, priceEach, orderLineNumber)
+VALUES (99001, 'S10_1678', 67,95.70, 1);
+INSERT INTO orderdetails (orderNumber, productCode, quantityOrdered, priceEach, orderLineNumber)
+VALUES (99001, 'S10_1678', 10000, 95.70, 2);

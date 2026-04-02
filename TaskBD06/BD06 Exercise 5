@@ -1,0 +1,53 @@
+USE classicmodels;
+
+DELIMITER //
+
+CREATE PROCEDURE customers_sales_report(
+    IN office_name VARCHAR(50),
+    IN year_param INT,
+    OUT report LONGTEXT
+)
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_emp_name VARCHAR(100);
+    DECLARE v_cust_name VARCHAR(50);
+    DECLARE v_total_sales DECIMAL(15,2);
+    DECLARE v_has_data INT DEFAULT 0;
+    DECLARE sales_cursor CURSOR FOR
+        SELECT 
+            CONCAT(e.firstName, ' ', e.lastName) AS employee_name,
+            c.customerName,
+            SUM(od.quantityOrdered * od.priceEach) AS total_sales
+        FROM offices o
+        JOIN employees e ON o.officeCode = e.officeCode
+        JOIN customers c ON e.employeeNumber = c.salesRepEmployeeNumber
+        JOIN orders ord ON c.customerNumber = ord.customerNumber
+        JOIN orderdetails od ON ord.orderNumber = od.orderNumber
+        WHERE o.city = office_name 
+          AND YEAR(ord.orderDate) = year_param
+        GROUP BY e.employeeNumber, c.customerNumber
+        ORDER BY employee_name, c.customerName;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    SET report = '';
+    OPEN sales_cursor;
+    read_loop: LOOP
+        FETCH sales_cursor INTO v_emp_name, v_cust_name, v_total_sales;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        SET v_has_data = 1;
+        SET report = CONCAT(report, '** Employee: ', v_emp_name, ' ** Customer: ', v_cust_name, ' ** Total Sales: ', FORMAT(v_total_sales, 2), '\n');
+    END LOOP;
+
+    CLOSE sales_cursor;
+    IF v_has_data = 0 THEN
+        SET report = CONCAT('No sales data available for office "', office_name, '" in year ', year_param, '.');
+    END IF;
+
+END //
+
+DELIMITER ;
+CALL customers_sales_report('London', 2003, @report);
+SELECT @report;
+CALL customers_sales_report('London', 2025, @report);
+SELECT @report;
