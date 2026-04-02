@@ -1,0 +1,28 @@
+DELIMITER //
+
+CREATE TRIGGER before_insert_order_limit
+BEFORE INSERT ON orders
+FOR EACH ROW
+BEGIN
+    DECLARE active_orders INT;
+    SELECT COUNT(*) INTO active_orders
+    FROM orders
+    WHERE customerNumber = NEW.customerNumber 
+      AND status IN ('In Process', 'On Hold', 'Shipped');
+    IF active_orders >= 3 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'A customer cannot have more than 3 active orders';
+    END IF;
+END //
+
+DELIMITER ;
+INSERT INTO customers (customerNumber, customerName, contactLastName, contactFirstName, phone, addressLine1, city, country)
+VALUES (999, 'Cobaya Digital', 'Mercer', 'Gabriel', '555-0101', '123 Calle Falsa', 'Palma', 'Spain');
+INSERT INTO orders (orderNumber, orderDate, requiredDate, shippedDate, status, customerNumber)
+VALUES (99001, CURDATE(), CURDATE() + INTERVAL 5 DAY, NULL, 'In Process', 999);
+
+INSERT INTO orders (orderNumber, orderDate, requiredDate, shippedDate, status, customerNumber)
+VALUES (99002, CURDATE(), CURDATE() + INTERVAL 5 DAY, NULL, 'On Hold', 999);
+
+INSERT INTO orders (orderNumber, orderDate, requiredDate, shippedDate, status, customerNumber)
+VALUES (99003, CURDATE(), CURDATE() + INTERVAL 5 DAY, CURDATE(), 'Shipped', 999);
