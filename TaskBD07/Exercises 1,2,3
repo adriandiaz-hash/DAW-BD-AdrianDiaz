@@ -1,0 +1,4 @@
+use zoo
+db.createCollection("animals")
+show dbs
+show collections

@@ -1,0 +1,2 @@
+cd "C:\Users\diazo\Desktop\DAW\DAW I\Bases de dades\BD07 Task"
+mongoimport --db zoo --collection animals --file animals.json --jsonArray
